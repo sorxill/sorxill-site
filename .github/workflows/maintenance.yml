@@ -1,0 +1,52 @@
+# Ночное обслуживание. Непроверенный бэкап бэкапом не является,
+# а уязвимости появляются в уже собранных образах без единого коммита.
+name: maintenance
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  verify-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SSH-ключ
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_A_HOST }} >> ~/.ssh/known_hosts
+      - name: Бэкап и проверка восстановления
+        id: verify
+        run: |
+          ssh deploy@${{ secrets.SERVER_A_HOST }} \
+            "cd /opt/sorxill && ./infra/scripts/backup.sh && ./infra/scripts/verify-backup.sh" \
+            | tee result.txt
+      - name: Отчёт
+        if: always()
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TG_CHAT }}" \
+            -d text="backup ${{ job.status }}: $(tail -c 300 result.txt 2>/dev/null || echo 'нет вывода')"
+
+  rescan-images:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: read, security-events: write }
+    strategy:
+      matrix: { app: [api, web] }
+    steps:
+      - name: Trivy по текущему образу в проде
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/sorxill-${{ matrix.app }}:latest
+          format: sarif
+          output: trivy.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+      - name: Загрузить в Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-${{ matrix.app }}

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sorxill.ru — макет главной страницы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E7EBE7; --surface:#F2F5F2; --raised:#FAFCFA;
+  --ink:#101619; --body:#414A47; --muted:#6E7F78;
+  --line:#9BAAA2; --hair:#C7CFC8; --track:#DBE1DB;
+  --accent:#14507E; --accent-deep:#0C3A5C; --accent-soft:#93B4CE;
+  --delta:#B3261E; --delta-soft:#E3B4B0;
+  --font-display:'Instrument Sans',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --pad:clamp(20px,5vw,64px);
+}
+[data-theme="dark"]{
+  --paper:#0E1417; --surface:#161F23; --raised:#1B2529;
+  --ink:#E7EBE7; --body:#B6C0BB; --muted:#8C9A94;
+  --line:#273337; --hair:#1F2A2E; --track:#1E282C;
+  --accent:#7FB0D8; --accent-deep:#4E85AF; --accent-soft:#33556E;
+  --delta:#E8705F; --delta-soft:#6B2A24;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-display);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;transition:background .4s var(--ease),color .4s var(--ease)}
+.wrap{max-width:1200px;margin:0 auto;padding:0 var(--pad)}
+.mono{font-family:var(--font-mono)}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.09em;color:var(--accent);margin:0 0 14px}
+h1,h2,h3{margin:0;font-weight:500;letter-spacing:-.015em;line-height:1.1}
+h1{font-size:clamp(38px,5.4vw,68px)}
+h2{font-size:clamp(26px,3vw,38px)}
+h3{font-size:19px;letter-spacing:-.01em}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+section{padding:clamp(64px,9vw,132px) 0;border-top:.5px solid var(--hair)}
+.sec-label{display:flex;justify-content:space-between;align-items:baseline;
+  font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-bottom:38px}
+
+/* топбар */
+header{position:sticky;top:0;z-index:40;background:var(--paper);border-bottom:.5px solid var(--hair);
+  transition:background .4s var(--ease)}
+.bar{display:flex;align-items:center;justify-content:space-between;height:58px;font-family:var(--font-mono);font-size:12px}
+.bar nav{display:flex;gap:26px;color:var(--muted)}
+.bar nav a:hover{color:var(--ink)}
+.bar-right{display:flex;align-items:center;gap:18px;color:var(--muted)}
+.chip-btn{font-family:var(--font-mono);font-size:12px;color:var(--muted);background:none;
+  border:.5px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+.chip-btn:hover{color:var(--ink);border-color:var(--ink)}
+
+/* герой */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(24px,5vw,72px);
+  align-items:center;padding:clamp(56px,8vw,104px) 0 clamp(40px,5vw,64px)}
+.hero p.lead{font-size:clamp(16px,1.35vw,19px);color:var(--body);max-width:56ch;margin:20px 0 34px}
+.actions{display:flex;flex-wrap:wrap;gap:12px}
+.btn{font-family:var(--font-mono);font-size:13px;padding:13px 20px;border-radius:8px;cursor:pointer;
+  border:.5px solid var(--line);color:var(--ink);background:var(--surface);
+  border-bottom-width:2px;transition:transform .18s var(--ease),border-color .18s}
+.btn:hover{transform:translateY(-1px);border-color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink);border-bottom:2px solid var(--accent)}
+.orbit{width:100%;max-width:420px;margin-left:auto;display:block}
+
+/* полосы опыта */
+.rail{display:flex;flex-direction:column;gap:20px}
+.row{display:grid;grid-template-columns:170px 1fr 78px;gap:16px;align-items:start}
+.row .who{font-family:var(--font-mono);font-size:13px;color:var(--body);padding-top:7px}
+.row.active .who{color:var(--ink)}
+.row .dur{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-align:right;padding-top:7px}
+.tr{position:relative;background:var(--track);border-radius:5px;padding:0 0 3px}
+.bar-fill{position:relative;height:26px;border-radius:5px;background:var(--muted);
+  border-bottom:3px solid var(--line);width:0;overflow:hidden;
+  transition:width var(--grow,700ms) var(--ease)}
+.row.active .bar-fill{background:var(--accent);border-bottom-color:var(--accent-deep)}
+.reveal .bar-fill{width:var(--w)}
+.tick{position:absolute;top:6px;width:1px;height:11px;background:var(--track);opacity:0;
+  transition:opacity .25s var(--ease)}
+.reveal .tick{opacity:.85}
+.tick.d{width:2px;height:15px;top:4px;background:var(--delta);cursor:pointer}
+.reveal .tick.d{opacity:1}
+.tip{position:absolute;bottom:calc(100% + 9px);left:0;transform:translateX(-50%);
+  font-family:var(--font-mono);font-size:12px;white-space:nowrap;background:var(--ink);color:var(--paper);
+  padding:6px 10px;border-radius:6px;opacity:0;pointer-events:none;transition:opacity .16s}
+.tick.d:hover .tip{opacity:1}
+
+/* опыт */
+.job{border-top:.5px solid var(--hair)}
+.job:last-child{border-bottom:.5px solid var(--hair)}
+.job-head{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:baseline;
+  padding:26px 0;cursor:pointer;background:none;border:0;width:100%;text-align:left;color:inherit;font:inherit}
+.job-head .when{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.job-head h3{transition:color .2s}
+.job-head:hover h3{color:var(--accent)}
+.job-panel{display:grid;grid-template-rows:0fr;transition:grid-template-rows .42s var(--ease)}
+.job[open-panel] .job-panel{grid-template-rows:1fr}
+.job-panel>div{overflow:hidden}
+.job-body{padding:0 0 30px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:44px}
+.job-body ul{margin:0;padding-left:20px;color:var(--body);font-size:15px}
+.job-body li{margin-bottom:11px}
+.job-body li b{font-weight:500;color:var(--ink);font-family:var(--font-mono);font-size:14px}
+.stack-chips{display:flex;flex-wrap:wrap;gap:7px;align-content:start}
+.stack-chips span{font-family:var(--font-mono);font-size:12px;color:var(--body);
+  border:.5px solid var(--line);border-radius:5px;padding:4px 9px}
+
+/* измеримое */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:22px}
+.metric{background:var(--surface);border:.5px solid var(--line);border-bottom-width:2px;border-radius:10px;padding:24px}
+.metric .num{font-family:var(--font-mono);font-size:34px;color:var(--delta);letter-spacing:-.02em}
+.metric .cap{font-size:14px;color:var(--muted);margin-top:8px}
+
+/* стек */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:30px}
+.stack-col h3{font-family:var(--font-mono);font-size:13px;color:var(--accent);margin-bottom:14px}
+.stack-col ul{list-style:none;margin:0;padding:0}
+.stack-col li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;
+  border-bottom:.5px solid var(--hair);font-size:15px}
+.stack-col li em{font-family:var(--font-mono);font-size:12px;color:var(--muted);font-style:normal}
+
+/* лента */
+.feed{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px}
+.card{background:var(--raised);border:.5px solid var(--line);border-bottom-width:2px;border-radius:10px;
+  padding:22px;transition:transform .2s var(--ease)}
+.card:hover{transform:translateY(-3px)}
+.card .src{font-family:var(--font-mono);font-size:11px;color:var(--accent);margin-bottom:11px}
+.card h3{font-size:17px;margin-bottom:9px}
+.card p{font-size:14px;color:var(--body)}
+.card .meta{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:16px}
+
+/* бронирование */
+.book{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,64px);align-items:center}
+.slots{background:var(--surface);border:.5px solid var(--line);border-radius:12px;overflow:hidden}
+.slots-head{background:var(--accent);color:var(--paper);font-family:var(--font-mono);font-size:12px;
+  padding:11px 18px;display:flex;justify-content:space-between}
+[data-theme="dark"] .slots-head{color:#0E1417}
+.slots-body{padding:16px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.slot{font-family:var(--font-mono);font-size:12px;text-align:center;padding:11px 4px;border-radius:6px;
+  border:.5px solid var(--line);cursor:pointer;transition:all .18s}
+.slot:hover{border-color:var(--ink);transform:translateY(-1px)}
+.slot.off{color:var(--muted);border-style:dashed;cursor:default}
+.slot.off:hover{transform:none;border-color:var(--line)}
+
+footer{padding:56px 0 70px;border-top:.5px solid var(--hair);
+  display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;
+  font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+footer a:hover{color:var(--ink)}
+.f-links{display:flex;flex-wrap:wrap;gap:22px}
+
+/* палитра команд */
+.pal{position:fixed;inset:0;z-index:60;background:rgba(16,22,25,.42);
+  display:none;align-items:flex-start;justify-content:center;padding-top:14vh}
+.pal[data-open]{display:flex}
+.pal-box{width:min(560px,90vw);background:var(--raised);border:.5px solid var(--line);
+  border-radius:12px;overflow:hidden}
+.pal-in{width:100%;border:0;border-bottom:.5px solid var(--hair);background:none;color:var(--ink);
+  font-family:var(--font-mono);font-size:14px;padding:16px 18px;outline:none}
+.pal-list{list-style:none;margin:0;padding:8px}
+.pal-list li{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:13px;
+  padding:11px 12px;border-radius:7px;color:var(--body);cursor:pointer}
+.pal-list li:hover{background:var(--surface);color:var(--ink)}
+.pal-list li span{color:var(--muted);font-size:11px}
+
+.anim{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+.anim.in{opacity:1;transform:none}
+
+@media (max-width:900px){
+  .hero,.job-body,.book{grid-template-columns:1fr}
+  .orbit{margin:0 auto}
+  .row{grid-template-columns:120px 1fr 60px;gap:10px}
+  .bar .nav-hide{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  html{scroll-behavior:auto}
+  .anim{opacity:1;transform:none}
+  .bar-fill{width:var(--w)!important}
+  .tick{opacity:.85!important}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <a href="#top" class="mono">sorxill.ru</a>
+    <nav class="nav-hide">
+      <a href="#experience">опыт</a>
+      <a href="#stack">стек</a>
+      <a href="#notes">заметки</a>
+      <a href="#booking">звонок</a>
+    </nav>
+    <div class="bar-right">
+      <span>ru / <a href="#" style="color:var(--ink)">en</a></span>
+      <button class="chip-btn" id="palBtn">⌘K</button>
+      <button class="chip-btn" id="themeBtn">◐ тема</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap">
+
+  <div class="hero">
+    <div>
+      <p class="eyebrow anim">python backend engineer · asyncio · 3 года в проде</p>
+      <h1 class="anim">Вывожу сервисы из PoC в платный прод</h1>
+      <p class="lead anim">Ярослав Бритов. Единственный Python-инженер в департаменте телеком-вендора: шлюз на FastAPI, который держит 500+ RPS, сервис уведомлений на 100k+ сообщений в сутки, профилирование PostgreSQL и ClickHouse под нагрузкой. Открыт к релокации — Сербия, Кипр, ЕС — и к удалёнке.</p>
+      <div class="actions anim">
+        <button class="btn primary" onclick="document.getElementById('booking').scrollIntoView()">SELECT slot FROM calendar</button>
+        <button class="btn">resume.ru.pdf</button>
+        <button class="btn">resume.en.pdf</button>
+      </div>
+    </div>
+    <svg class="orbit anim" viewBox="0 0 420 320" role="img" aria-label="Схема цикла событий: три наклонённые орбиты с задачами, одна задача выполняется на переднем плане">
+      <ellipse cx="210" cy="160" rx="176" ry="58" fill="none" stroke="var(--line)" stroke-width=".5" opacity=".55"/>
+      <ellipse cx="210" cy="160" rx="122" ry="40" fill="none" stroke="var(--line)" stroke-width=".5" stroke-dasharray="4 5" opacity=".5"/>
+      <ellipse cx="210" cy="160" rx="68" ry="22" fill="none" stroke="var(--line)" stroke-width=".5" opacity=".45"/>
+      <g id="dots"></g>
+      <text x="210" y="300" text-anchor="middle" fill="var(--muted)" font-size="12" font-family="JetBrains Mono, monospace">event loop · 6 tasks</text>
+    </svg>
+  </div>
+
+  <section id="career">
+    <div class="sec-label"><span>trace / career · насечки = релизы, красные = дельты</span><span>3 г 7 мес</span></div>
+    <div class="rail" id="rail">
+
+      <div class="row">
+        <div class="who">tracker</div>
+        <div class="tr">
+          <div class="bar-fill" style="--w:10%;--grow:420ms;margin-left:0%">
+            <i class="tick" style="left:34%"></i>
+            <i class="tick d" style="left:62%"><span class="tip">docker-образ 1.4 ГБ → 0.3 ГБ</span></i>
+            <i class="tick d" style="left:86%"><span class="tip">баги на ревью 10/нед → 2-3</span></i>
+          </div>
+        </div>
+        <div class="dur">4 мес</div>
+      </div>
+
+      <div class="row">
+        <div class="who">zhababot</div>
+        <div class="tr">
+          <div class="bar-fill" style="--w:13%;--grow:460ms;margin-left:10%">
+            <i class="tick" style="left:28%"></i>
+            <i class="tick d" style="left:56%"><span class="tip">фича 12 дней → 3 дня</span></i>
+            <i class="tick d" style="left:84%"><span class="tip">релизы ×4 чаще</span></i>
+          </div>
+        </div>
+        <div class="dur">5 мес</div>
+      </div>
+
+      <div class="row active">
+        <div class="who">telecom-vendor</div>
+        <div class="tr">
+          <div class="bar-fill" style="--w:76%;--grow:820ms;margin-left:24%">
+            <i class="tick" style="left:9%"></i>
+            <i class="tick d" style="left:19%"><span class="tip">PoC → MVP за 6 недель</span></i>
+            <i class="tick" style="left:29%"></i>
+            <i class="tick d" style="left:38%"><span class="tip">шлюз держит 500+ RPS</span></i>
+            <i class="tick" style="left:48%"></i>
+            <i class="tick d" style="left:57%"><span class="tip">SMS-сервис: 100k+ сообщений в сутки</span></i>
+            <i class="tick" style="left:66%"></i>
+            <i class="tick d" style="left:75%"><span class="tip">внешний API 10k → 5k запросов в день</span></i>
+            <i class="tick d" style="left:86%"><span class="tip">тяжёлые запросы PG 5 мин → 1 мин</span></i>
+            <i class="tick" style="left:95%"></i>
+          </div>
+        </div>
+        <div class="dur">2 г 1 мес</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="measured">
+    <div class="sec-label"><span>measured / в проде прямо сейчас</span><span>4 показателя</span></div>
+    <div class="metrics">
+      <div class="metric anim"><div class="num">500+</div><div class="cap">RPS держит FastAPI-шлюз с rate limiting, кэшем ответов и circuit breaker</div></div>
+      <div class="metric anim"><div class="num">100k+</div><div class="cap">сообщений в сутки в сведённом сервисе уведомлений с ретраями</div></div>
+      <div class="metric anim"><div class="num">×5</div><div class="cap">быстрее аналитические выгрузки после GLOBAL JOIN и pre-where в ClickHouse</div></div>
+      <div class="metric anim"><div class="num">6 нед</div><div class="cap">от PoC до MVP, ещё 3 месяца до платного релиза у клиентов</div></div>
+    </div>
+  </section>
+
+  <section id="experience">
+    <div class="sec-label"><span>experience / 3 места, 7 дельт</span><span>раскрыть →</span></div>
+
+    <div class="job" open-panel>
+      <button class="job-head">
+        <div><h3>Инженер-программист (backend) · Телеком-вендор</h3></div>
+        <div class="when">июль 2024 — наст. время</div>
+      </button>
+      <div class="job-panel"><div><div class="job-body">
+        <ul>
+          <li>Единственный Python-инженер в департаменте. Веду backend-сервисы для международных клиентов на всём цикле — от HLD/LLD и PoC до прода, напрямую общаюсь с продакт-менеджером.</li>
+          <li>Вывел основной продукт департамента из PoC в платный коммерческий релиз: <b>PoC → MVP за 6 недель</b>, MVP → прод за 3 месяца. Работает у клиентов и приносит регулярную выручку.</li>
+          <li>Собрал FastAPI-шлюз перед внутренними HTTP-сервисами: rate limiting, кэш ответов, circuit breaker. <b>500+ RPS</b> в проде и стабильная точка интеграции для клиентов.</li>
+          <li>Свёл SMS-уведомления в один сервис на Django, Celery и RabbitMQ — маршрутизация по операторам, ретраи, устойчивые очереди. <b>100k+ сообщений в сутки</b>, дубли у клиентов кончились.</li>
+          <li>Сократил исходящий трафик к платному внешнему API <b>10k → 5k запросов в день</b> через Redis-кэш и отложенную доставку по RabbitMQ.</li>
+          <li>Искал узкие места через cProfile и анализ запросов: тяжёлые запросы в PostgreSQL <b>5 мин → 1 мин</b>, выгрузки в ClickHouse <b>×5 быстрее</b>. Отчёты, падавшие по таймауту, снова доступны бизнесу.</li>
+          <li>Сейчас пишу gRPC-сервис перед крупным внутренним комплексом: постановка задач, очередь запросов, выдача больших результатов батчами. До этого взаимодействие шло через устаревший Thrift.</li>
+        </ul>
+        <div class="stack-chips">
+          <span>Python 3.13</span><span>FastAPI</span><span>asyncio</span><span>Django</span><span>Celery</span>
+          <span>PostgreSQL</span><span>ClickHouse</span><span>Redis</span><span>RabbitMQ</span><span>Kafka</span>
+          <span>gRPC</span><span>Docker</span><span>K3s</span><span>Prometheus</span><span>Grafana</span><span>Jenkins</span>
+        </div>
+      </div></div></div>
+    </div>
+
+    <div class="job">
+      <button class="job-head">
+        <div><h3>Младший инженер · ТОО «Жабабот», Казахстан</h3></div>
+        <div class="when">март 2024 — июль 2024</div>
+      </button>
+      <div class="job-panel"><div><div class="job-body">
+        <ul>
+          <li>B2C-игра в Telegram. Переработал схему в MariaDB: нормализовал таблицы, добавил внешние ключи и каскадное удаление. Время код-ревью упало <b>на 40%</b>, багфиксы стали выходить вдвое быстрее.</li>
+          <li>Переписал бизнес-логику из монолитного модуля в набор расширяемых компонентов: добавление фичи <b>12 дней → 3 дня</b>, релизы <b>×4 чаще</b>.</li>
+        </ul>
+        <div class="stack-chips"><span>Python</span><span>aiohttp</span><span>asyncio</span><span>MariaDB</span><span>Grafana</span><span>Git</span></div>
+      </div></div></div>
+    </div>
+
+    <div class="job">
+      <button class="job-head">
+        <div><h3>Младший инженер · Tracker, стартап на раннем этапе</h3></div>
+        <div class="when">декабрь 2023 — март 2024</div>
+      </button>
+      <div class="job-panel"><div><div class="job-body">
+        <ul>
+          <li>Спроектировал модель данных — PostgreSQL, SQLAlchemy, Alembic, 10+ таблиц — и HTTP API на FastAPI: <b>20+ эндпоинтов</b>, покрытие тестами 75%. На этом строился продукт.</li>
+          <li>Настроил CI в GitHub Actions (ruff, mypy, pytest): багов на ревью стало <b>10/нед → 2-3</b>.</li>
+          <li>Уменьшил Docker-образ multi-stage-сборкой <b>1.4 ГБ → 0.3 ГБ</b> и написал docker-compose, чтобы новый разработчик поднимал проект меньше чем за час.</li>
+        </ul>
+        <div class="stack-chips"><span>Python</span><span>FastAPI</span><span>PostgreSQL</span><span>SQLAlchemy</span><span>Docker</span><span>GitHub Actions</span></div>
+      </div></div></div>
+    </div>
+  </section>
+
+  <section id="stack">
+    <div class="sec-label"><span>stack / без «владею на 90%»</span><span>8 групп</span></div>
+    <div class="stack-grid">
+      <div class="stack-col anim">
+        <h3>языки</h3>
+        <ul><li>Python 3.10+ <em>основной</em></li><li>SQL <em>уверенно</em></li><li>Bash <em>рабочий</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>фреймворки</h3>
+        <ul><li>FastAPI <em>основной</em></li><li>Django <em>в проде</em></li><li>Pydantic v2 <em>основной</em></li><li>SQLAlchemy · Alembic <em>основной</em></li><li>Celery · aiohttp <em>в проде</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>асинхронность</h3>
+        <ul><li>asyncio <em>основной</em></li><li>threading <em>по задаче</em></li><li>multiprocessing <em>по задаче</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>данные</h3>
+        <ul><li>PostgreSQL <em>тюнинг под нагрузкой</em></li><li>ClickHouse <em>оптимизация выгрузок</em></li><li>Redis <em>кэш, счётчики</em></li><li>MySQL · MariaDB <em>в проде</em></li><li>MongoDB · S3 <em>рабочий</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>очереди</h3>
+        <ul><li>RabbitMQ <em>в проде</em></li><li>Kafka <em>консьюмер</em></li><li>gRPC <em>пишу сейчас</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>инфраструктура</h3>
+        <ul><li>Docker · Compose <em>основной</em></li><li>Kubernetes K3s · Rancher <em>эксплуатация</em></li><li>Nginx · Linux <em>уверенно</em></li><li>GitHub Actions · GitLab CI · Jenkins <em>настраиваю</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>наблюдаемость</h3>
+        <ul><li>Prometheus · Grafana <em>дашборды и алерты</em></li><li>Loki <em>логи</em></li><li>cProfile <em>профилирование</em></li></ul>
+      </div>
+      <div class="stack-col anim">
+        <h3>практики</h3>
+        <ul><li>pytest <em>75%+ покрытие</em></li><li>mypy · ruff · pre-commit <em>всегда</em></li><li>REST и микросервисы <em>проектирование</em></li><li>SOLID · DRY · код-ревью <em>ежедневно</em></li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="notes">
+    <div class="sec-label"><span>notes / github · заметки · выступления</span><span>обновляется раз в час</span></div>
+    <div class="feed">
+      <div class="card anim">
+        <div class="src">github ↗</div>
+        <h3>fastapi-gateway-kit</h3>
+        <p>Заготовка шлюза: rate limiting на Redis, кэш ответов, circuit breaker и graceful shutdown.</p>
+        <div class="meta">Python · 34★ · обновлён 2 дня назад</div>
+      </div>
+      <div class="card anim">
+        <div class="src">заметка</div>
+        <h3>Почему GLOBAL JOIN в ClickHouse ускорил выгрузку в 5 раз</h3>
+        <p>Разбор запроса, который падал по таймауту: pre-where, порядок джойнов и что показал план.</p>
+        <div class="meta">12 мин чтения · июнь 2026</div>
+      </div>
+      <div class="card anim">
+        <div class="src">linkedin ↗</div>
+        <h3>Как я вывел продукт из PoC в платный релиз за 4 месяца</h3>
+        <p>Что пришлось выкинуть из PoC, чтобы MVP собрался за 6 недель, и где это потом стоило дорого.</p>
+        <div class="meta">пост · 1,2k просмотров</div>
+      </div>
+      <div class="card anim">
+        <div class="src">github ↗</div>
+        <h3>pg-slow-query-lab</h3>
+        <p>Стенд для воспроизведения медленных запросов и проверки индексов до продакшена.</p>
+        <div class="meta">Python · SQL · 11★</div>
+      </div>
+      <div class="card anim">
+        <div class="src">заметка</div>
+        <h3>Один Python-инженер на департамент: как не стать бутылочным горлышком</h3>
+        <p>Про HLD, ADR и код-ревью тимлида, когда ты единственный, кто пишет на этом языке.</p>
+        <div class="meta">7 мин чтения · май 2026</div>
+      </div>
+      <div class="card anim">
+        <div class="src">выступления</div>
+        <h3>Пока пусто</h3>
+        <p>Раздел заложен: как появятся записи докладов, они встанут сюда без правок вёрстки.</p>
+        <div class="meta">заглушка</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="booking">
+    <div class="sec-label"><span>booking / прямой звонок без переписки</span><span>UTC+3 · 30 минут</span></div>
+    <div class="book">
+      <div>
+        <h2 style="margin-bottom:18px">Проще поговорить</h2>
+        <p style="color:var(--body);max-width:46ch">Выберите слот — придёт приглашение с ссылкой на встречу. Если удобнее текстом, напишите в Telegram или на почту, отвечаю в течение дня.</p>
+        <div class="actions" style="margin-top:26px">
+          <button class="btn">t.me/sorxill</button>
+          <button class="btn">yarikbritov@yandex.ru</button>
+        </div>
+      </div>
+      <div class="slots anim">
+        <div class="slots-head"><span>SELECT slot FROM calendar</span><span>7 свободно</span></div>
+        <div class="slots-body">
+          <div class="slot">чт 10:00</div><div class="slot">чт 14:30</div><div class="slot off">чт 16:00</div>
+          <div class="slot">пт 11:00</div><div class="slot off">пт 13:00</div><div class="slot">пт 17:30</div>
+          <div class="slot">пн 09:30</div><div class="slot">пн 12:00</div><div class="slot">пн 15:00</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>© 2026 Ярослав Бритов · собрано на Next.js и FastAPI</div>
+    <div class="f-links">
+      <a href="#">status</a><a href="#">resume.json</a><a href="#">rss</a>
+      <a href="#">github</a><a href="#">linkedin</a><a href="#">telegram</a><a href="#">приватность</a>
+    </div>
+  </footer>
+
+</div>
+</main>
+
+<div class="pal" id="pal">
+  <div class="pal-box">
+    <input class="pal-in" placeholder="куда идём?" aria-label="поиск по сайту">
+    <ul class="pal-list">
+      <li><span style="color:var(--ink)">Забронировать звонок</span><span>booking</span></li>
+      <li>Скачать резюме — ru<span>pdf</span></li>
+      <li>Скачать резюме — en<span>pdf</span></li>
+      <li>Опыт и дельты<span>experience</span></li>
+      <li>Переключить тему<span>⇧T</span></li>
+      <li>Сменить язык на English<span>⇧L</span></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+document.getElementById('themeBtn').onclick = () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === 'dark' ? 'light' : 'dark';
+};
+if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.dataset.theme = 'dark';
+
+const pal = document.getElementById('pal');
+document.getElementById('palBtn').onclick = () => { pal.setAttribute('data-open',''); pal.querySelector('input').focus(); };
+pal.onclick = e => { if (e.target === pal) pal.removeAttribute('data-open'); };
+addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); pal.setAttribute('data-open',''); pal.querySelector('input').focus(); }
+  if (e.key === 'Escape') pal.removeAttribute('data-open');
+});
+
+document.querySelectorAll('.job-head').forEach(h => h.onclick = () => {
+  const job = h.closest('.job');
+  job.hasAttribute('open-panel') ? job.removeAttribute('open-panel') : job.setAttribute('open-panel','');
+});
+
+const io = new IntersectionObserver((es) => {
+  es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: .15 });
+document.querySelectorAll('.anim').forEach((el,i) => { el.style.transitionDelay = (i % 6) * 60 + 'ms'; io.observe(el); });
+
+const railIo = new IntersectionObserver((es) => {
+  es.forEach((e,) => {
+    if (!e.isIntersecting) return;
+    const rows = [...document.querySelectorAll('#rail .row')];
+    rows.forEach((row, i) => {
+      setTimeout(() => {
+        row.classList.add('reveal');
+        const fill = row.querySelector('.bar-fill');
+        const grow = parseInt(getComputedStyle(fill).getPropertyValue('--grow')) || 700;
+        row.querySelectorAll('.tick').forEach(t => {
+          const pos = parseFloat(t.style.left) / 100;
+          t.style.transitionDelay = (reduce ? 0 : grow * pos + 120) + 'ms';
+        });
+      }, reduce ? 0 : i * 180);
+    });
+    railIo.disconnect();
+  });
+}, { threshold: .3 });
+railIo.observe(document.getElementById('rail'));
+
+const dots = document.getElementById('dots');
+const tasks = [
+  { rx:176, ry:58, t:0.2,  s:0.16, r:7,   c:'var(--accent)' },
+  { rx:176, ry:58, t:2.4,  s:0.16, r:6,   c:'var(--muted)'  },
+  { rx:122, ry:40, t:1.1,  s:0.24, r:5.5, c:'var(--accent)' },
+  { rx:122, ry:40, t:3.9,  s:0.24, r:5,   c:'var(--muted)'  },
+  { rx:68,  ry:22, t:0.0,  s:0.38, r:9,   c:'var(--delta)'  },
+  { rx:68,  ry:22, t:3.3,  s:0.38, r:4.5, c:'var(--muted)'  }
+];
+tasks.forEach(t => {
+  t.el = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  t.el.setAttribute('fill', t.c);
+  dots.appendChild(t.el);
+});
+
+let speed = 1, lastY = scrollY, lastT = performance.now();
+addEventListener('scroll', () => {
+  const now = performance.now();
+  const v = Math.abs(scrollY - lastY) / Math.max(now - lastT, 1);
+  speed = Math.min(1 + v * 1.6, 3);
+  lastY = scrollY; lastT = now;
+}, { passive:true });
+
+let running = true;
+new IntersectionObserver(e => running = e[0].isIntersecting, { threshold: .05 })
+  .observe(document.querySelector('.orbit'));
+
+function frame(now) {
+  if (running) {
+    tasks.forEach(t => {
+      t.t += t.s * 0.016 * (reduce ? 0 : speed);
+      const depth = (Math.sin(t.t) + 1) / 2;
+      t.el.setAttribute('cx', 210 + t.rx * Math.cos(t.t));
+      t.el.setAttribute('cy', 160 + t.ry * Math.sin(t.t));
+      t.el.setAttribute('r', t.r * (0.62 + depth * 0.55));
+      t.el.setAttribute('opacity', 0.42 + depth * 0.58);
+    });
+  }
+  speed += (1 - speed) * 0.04;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# Макет и токены — документация, а не код: иначе статистика языков
+# репозитория покажет HTML вместо Python и TypeScript.
+docs/**            linguist-documentation
+*.md               linguist-documentation
+infra/**           linguist-vendored=false

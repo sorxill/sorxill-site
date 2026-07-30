@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="Instrument Sans, Helvetica, Arial, sans-serif">
+  <rect width="1280" height="640" fill="#E7EBE7"/>
+  <text x="88" y="150" font-family="JetBrains Mono, monospace" font-size="21" letter-spacing="2" fill="#14507E">SORXILL.RU</text>
+  <text x="88" y="268" font-size="82" font-weight="500" letter-spacing="-2" fill="#101619">Ярослав Бритов</text>
+  <text x="88" y="336" font-size="36" fill="#414A47">Python Backend Engineer</text>
+
+  <g font-family="JetBrains Mono, monospace" font-size="17" fill="#6E7F78">
+    <text x="88" y="424">tracker</text>
+    <rect x="300" y="410" width="88" height="20" rx="4" fill="#8A968F"/>
+    <rect x="300" y="430" width="88" height="3" fill="#6E7F78"/>
+
+    <text x="88" y="474">zhababot</text>
+    <rect x="388" y="460" width="112" height="20" rx="4" fill="#8A968F"/>
+    <rect x="388" y="480" width="112" height="3" fill="#6E7F78"/>
+
+    <text x="88" y="524" fill="#101619">telecom-vendor</text>
+    <rect x="500" y="510" width="660" height="20" rx="4" fill="#14507E"/>
+    <rect x="500" y="530" width="660" height="3" fill="#0C3A5C"/>
+    <rect x="620" y="512" width="2" height="16" fill="#B3261E"/>
+    <rect x="760" y="512" width="2" height="16" fill="#B3261E"/>
+    <rect x="900" y="512" width="2" height="16" fill="#B3261E"/>
+    <rect x="1040" y="512" width="2" height="16" fill="#B3261E"/>
+  </g>
+
+  <g font-family="JetBrains Mono, monospace" font-size="19">
+    <text x="88" y="592" fill="#B3261E">500+ RPS</text>
+    <text x="248" y="592" fill="#B3261E">100k+ msg/day</text>
+    <text x="488" y="592" fill="#B3261E">5 мин → 1 мин</text>
+    <text x="1160" y="592" text-anchor="end" fill="#6E7F78">FastAPI · Next.js</text>
+  </g>
+  <rect x="88" y="556" width="1072" height="0.5" fill="#9BAAA2"/>
+</svg>

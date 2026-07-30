@@ -1,0 +1,8 @@
+{
+  "hero": {
+    "eyebrow": "python backend engineer · asyncio · 3 года в проде",
+    "title": "Вывожу сервисы из PoC в платный прод",
+    "book": "SELECT slot FROM calendar"
+  },
+  "sections": { "projects": "проекты" }
+}

@@ -1,0 +1,94 @@
+/* Дизайн-токены sorxill.ru — Tailwind v4, @theme
+   Единственный источник правды по цвету, типографике и ритму.
+   Хардкод цвета или размера в компоненте = отклонённый PR. */
+
+@import "tailwindcss";
+
+@theme {
+  /* --- цвет: светлая тема (по умолчанию) --- */
+  --color-paper: #E7EBE7;        /* фон страницы */
+  --color-surface: #F2F5F2;      /* карточки, треки полос */
+  --color-raised: #FAFCFA;       /* приподнятые карточки ленты */
+  --color-ink: #101619;          /* основной текст */
+  --color-body: #414A47;         /* абзацы */
+  --color-muted: #6E7F78;        /* подписи, мета */
+  --color-line: #9BAAA2;         /* границы и фаски */
+  --color-hair: #C7CFC8;         /* разделители секций */
+  --color-track: #DBE1DB;        /* посадочный трек полосы опыта */
+
+  /* Два акцента, жёсткие роли. Синий — структура, связи, активный span.
+     Красный — ТОЛЬКО измеримые величины: дельты, метрики, активная задача. */
+  --color-accent: #14507E;
+  --color-accent-deep: #0C3A5C;  /* фаска под синим */
+  --color-accent-soft: #93B4CE;  /* насечки-релизы внутри активной полосы */
+  --color-delta: #B3261E;
+  --color-delta-soft: #E3B4B0;
+
+  /* --- типографика --- */
+  --font-display: "Instrument Sans", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* модульная шкала, шаг 1.25; всё крупное — через clamp */
+  --text-step--1: 0.8rem;
+  --text-step-0: 1rem;
+  --text-step-1: 1.1875rem;
+  --text-step-2: 1.5rem;
+  --text-step-3: 2rem;
+  --text-step-4: clamp(1.625rem, 3vw, 2.375rem);
+  --text-step-5: clamp(2.375rem, 5.4vw, 4.25rem);
+
+  /* только два веса: 400 и 500. 600+ выглядит тяжело в этой палитре */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+
+  /* --- ритм: база 4px --- */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-section: clamp(4rem, 9vw, 8.25rem);
+  --spacing-gutter: clamp(1.25rem, 5vw, 4rem);
+  --container-page: 75rem;       /* 1200px */
+
+  /* --- материал: тиснение вместо тени --- */
+  --border-bevel: 2px;           /* нижняя фаска кнопок и карточек */
+  --border-bevel-bar: 3px;       /* фаска полосы опыта */
+  --radius-control: 0.375rem;
+  --radius-card: 0.625rem;
+
+  /* --- движение --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-micro: 180ms;
+  --duration-reveal: 600ms;
+  --duration-bar-min: 420ms;     /* короткая полоса опыта */
+  --duration-bar-max: 820ms;     /* самая длинная полоса */
+  --orbit-period: 16s;           /* полный оборот кольца в покое */
+  --orbit-speed-max: 3;          /* множитель при быстром скролле */
+  --orbit-decay: 0.04;           /* возврат к базовой скорости за кадр */
+}
+
+/* --- тёмная тема: только переопределение цвета, ни одного размера --- */
+[data-theme="dark"] {
+  --color-paper: #0E1417;
+  --color-surface: #161F23;
+  --color-raised: #1B2529;
+  --color-ink: #E7EBE7;
+  --color-body: #B6C0BB;
+  --color-muted: #8C9A94;
+  --color-line: #273337;
+  --color-hair: #1F2A2E;
+  --color-track: #1E282C;
+  --color-accent: #7FB0D8;
+  --color-accent-deep: #4E85AF;
+  --color-accent-soft: #33556E;
+  --color-delta: #E8705F;
+  --color-delta-soft: #6B2A24;
+}
+
+/* Тема ставится инлайновым скриптом до первой отрисовки и хранится в cookie,
+   чтобы SSR отдал сразу правильный вариант и не было вспышки светлой темы. */

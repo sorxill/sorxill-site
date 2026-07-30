@@ -1,0 +1,17 @@
+.env
+.env.local
+.deploy-previous
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+node_modules/
+.next/
+out/
+*.log
+.DS_Store
+.env.secrets
+.deploy-current

@@ -1,0 +1,33 @@
+# Локальная разработка: порты наружу, hot reload, без Traefik и TLS.
+name: sorxill-local
+
+services:
+  traefik: { profiles: ["never"] }
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    volumes: ["../../apps/web:/app"]
+    ports: ["3000:3000"]
+    deploy: { resources: { limits: { memory: 1G } } }
+
+  api:
+    build: { context: ../../apps/api, target: runtime }
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    environment:
+      APP_ENV: local
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    volumes: ["../../apps/api/app:/app/app:ro"]
+    ports: ["8000:8000"]
+
+  postgres:
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_PASSWORD: local
+
+  redis:
+    ports: ["6379:6379"]

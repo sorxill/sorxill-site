@@ -1,0 +1,39 @@
+# Прод: сервер A. Никаких build-секций — образы приходят готовыми из CI.
+name: sorxill
+
+services:
+  web:
+    pull_policy: always
+  api:
+    pull_policy: always
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sorxill}:${POSTGRES_PASSWORD}@postgres:5432/umami
+      APP_SECRET: ${UMAMI_SECRET}
+    depends_on:
+      postgres: { condition: service_healthy }
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.umami.rule=Host(`analytics.${DOMAIN}`)
+      - traefik.http.routers.umami.middlewares=sec-headers@file
+      - traefik.http.services.umami.loadbalancer.server.port=3000
+    deploy:
+      resources:
+        limits: { memory: 320M, cpus: "0.2" }
+
+  alloy:
+    image: grafana/alloy:latest
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - /etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    deploy:
+      resources:
+        limits: { memory: 96M, cpus: "0.1" }

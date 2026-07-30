@@ -1,0 +1,20 @@
+http:
+  middlewares:
+    sec-headers:
+      headers:
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        contentTypeNosniff: true
+        referrerPolicy: strict-origin-when-cross-origin
+        customResponseHeaders:
+          X-Powered-By: ""
+          Server: ""
+    ratelimit:
+      rateLimit:
+        average: 40
+        burst: 80
+        period: 1s
+    admin-allowlist:
+      ipAllowList:
+        sourceRange: ["10.8.0.0/24"]   # адреса вашего VPN

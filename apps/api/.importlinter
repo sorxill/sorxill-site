@@ -1,0 +1,25 @@
+[importlinter]
+root_package = app
+include_external_packages = True
+
+[importlinter:contract:layers]
+name = Зависимости направлены только внутрь
+type = layers
+layers =
+    api
+    application
+    domain
+containers =
+    app
+
+[importlinter:contract:domain-is-pure]
+name = Домен не знает про фреймворки и БД
+type = forbidden
+source_modules =
+    app.domain
+forbidden_modules =
+    fastapi
+    sqlalchemy
+    pydantic
+    app.infrastructure
+    app.api

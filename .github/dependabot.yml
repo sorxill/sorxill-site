@@ -1,0 +1,22 @@
+# Раз в месяц, одним PR на экосистему. Пять PR в неделю одиночка просто закроет не читая,
+# а это хуже, чем их отсутствие: привыкаешь игнорировать обновления безопасности.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /apps/api
+    schedule: { interval: monthly }
+    open-pull-requests-limit: 1
+    groups:
+      all: { patterns: ["*"] }
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule: { interval: monthly }
+    open-pull-requests-limit: 1
+    groups:
+      all: { patterns: ["*"] }
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    open-pull-requests-limit: 1
+    groups:
+      all: { patterns: ["*"] }

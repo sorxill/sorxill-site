@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Единственный источник правды по цвету, типографике и ритму.
+   Хардкод цвета или размера в компоненте = отклонённый PR. */
+@import "../styles/tokens.css";
+
+html { background: var(--color-paper); color: var(--color-ink); }
+body { margin: 0; font-family: var(--font-body); }

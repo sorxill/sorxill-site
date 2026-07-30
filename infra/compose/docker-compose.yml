@@ -1,0 +1,103 @@
+# База. Лимиты обязательны: контейнер без лимита при утечке забирает сервер целиком.
+name: sorxill
+
+services:
+  traefik:
+    image: traefik:v3.2
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls.certresolver=le
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      - --accesslog=true
+      - --accesslog.format=json
+    ports: ["80:80", "443:443"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-acme:/letsencrypt
+    deploy:
+      resources:
+        limits: { memory: 96M, cpus: "0.2" }
+    logging: &jsonlog
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  web:
+    image: ghcr.io/${GH_OWNER}/sorxill-web:${WEB_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      NEXT_PUBLIC_SITE_URL: https://${DOMAIN}
+    depends_on:
+      api: { condition: service_healthy }
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)
+      - traefik.http.routers.web.middlewares=sec-headers@file,ratelimit@file
+      - traefik.http.services.web.loadbalancer.server.port=3000
+    deploy:
+      resources:
+        limits: { memory: 512M, cpus: "0.6" }
+    logging: *jsonlog
+
+  api:
+    image: ghcr.io/${GH_OWNER}/sorxill-api:${API_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_VERSION: ${API_TAG:-dev}
+      CORS_ORIGINS: https://${DOMAIN},https://www.${DOMAIN}
+      CONTACT_PERSIST: ${CONTACT_PERSIST:-false}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.api.middlewares=sec-headers@file,ratelimit@file
+      - traefik.http.services.api.loadbalancer.server.port=8000
+    deploy:
+      resources:
+        limits: { memory: 384M, cpus: "0.4" }
+    logging: *jsonlog
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sorxill}
+      POSTGRES_USER: ${POSTGRES_USER:-sorxill}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    command: >
+      postgres -c shared_buffers=192MB -c work_mem=8MB
+               -c max_connections=40 -c effective_cache_size=768MB
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sorxill}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 768M, cpus: "0.5" }
+    logging: *jsonlog
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 96mb --maxmemory-policy allkeys-lru --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits: { memory: 128M, cpus: "0.1" }
+    logging: *jsonlog
+
+volumes:
+  pgdata:
+  traefik-acme:

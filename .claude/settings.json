@@ -1,0 +1,21 @@
+{
+  "attribution": { "commit": "", "pr": "" },
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(make lint)",
+      "Bash(make test)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git add -A:*)",
+      "Read(./.env)"
+    ]
+  }
+}
