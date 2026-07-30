@@ -55,3 +55,9 @@ updates:
   - package-ecosystem: docker
     directory: /apps/web
     schedule: { interval: monthly }
+    ignore:
+      # Только LTS: чётные версии Node. Нечётные (25, 27) живут полгода
+      # и не получают долгосрочных обновлений безопасности.
+      # Плюс рантайм образа обязан совпадать с .nvmrc и CI.
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
