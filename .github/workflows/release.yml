@@ -1,0 +1,148 @@
+# Сборка образов и деплой. Запускается только на тег vX.Y.Z,
+# который создаёт release-please при мерже релизного PR,
+# либо вручную через workflow_dispatch (в том числе для отката).
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      rollback_sha:
+        description: "SHA для отката (пусто = деплой текущего тега)"
+        required: false
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write, security-events: write }
+    strategy:
+      matrix: { app: [api, web] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/${{ matrix.app }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/sorxill-${{ matrix.app }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/sorxill-${{ matrix.app }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Не блокирует релиз: находки уходят в Security → Code scanning.
+      # Обоснование в ADR-0018.
+      - name: Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/sorxill-${{ matrix.app }}:${{ github.sha }}
+          format: sarif
+          output: trivy.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-${{ matrix.app }}
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://sorxill.ru
+    steps:
+      - uses: actions/checkout@v4
+      - name: SSH-ключ
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_A_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Синхронизация infra
+        run: rsync -az --delete -e ssh infra/ deploy@${{ secrets.SERVER_A_HOST }}:/opt/sorxill/infra/
+
+      - name: Разложить .env из секретов окружения
+        env:
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          IP_PEPPER: ${{ secrets.IP_PEPPER }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          UMAMI_SECRET: ${{ secrets.UMAMI_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          GH_TOKEN_READONLY: ${{ secrets.GH_TOKEN_READONLY }}
+          GRAFANA_CLOUD_TOKEN: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          umask 077
+          {
+            echo "APP_ENV=production"
+            echo "DOMAIN=${{ vars.DOMAIN }}"
+            echo "GH_OWNER=${{ github.repository_owner }}"
+            echo "ACME_EMAIL=${{ vars.ACME_EMAIL }}"
+            echo "API_TAG=${{ inputs.rollback_sha || github.sha }}"
+            echo "WEB_TAG=${{ inputs.rollback_sha || github.sha }}"
+            echo "POSTGRES_DB=sorxill"
+            echo "POSTGRES_USER=sorxill"
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+            echo "SECRET_KEY=$SECRET_KEY"
+            echo "IP_PEPPER=$IP_PEPPER"
+            echo "REVALIDATE_SECRET=$REVALIDATE_SECRET"
+            echo "UMAMI_SECRET=$UMAMI_SECRET"
+            echo "CONTACT_PERSIST=${{ vars.CONTACT_PERSIST || 'false' }}"
+            echo "SMTP_HOST=$SMTP_HOST"
+            echo "SMTP_PORT=587"
+            echo "SMTP_USER=$SMTP_USER"
+            echo "SMTP_PASSWORD=$SMTP_PASSWORD"
+            echo "GITHUB_TOKEN=$GH_TOKEN_READONLY"
+            echo "GRAFANA_CLOUD_TOKEN=$GRAFANA_CLOUD_TOKEN"
+            echo "SENTRY_DSN=$SENTRY_DSN"
+          } > env.render
+          scp -q env.render deploy@${{ secrets.SERVER_A_HOST }}:/opt/sorxill/.env.new
+          ssh deploy@${{ secrets.SERVER_A_HOST }} \
+            "chmod 600 /opt/sorxill/.env.new && mv /opt/sorxill/.env.new /opt/sorxill/.env"
+          shred -u env.render
+
+      - name: Rollout с health-gate и автооткатом
+        env: { TAG: "${{ inputs.rollback_sha || github.sha }}" }
+        run: ssh deploy@${{ secrets.SERVER_A_HOST }} "cd /opt/sorxill && ./infra/scripts/rollout.sh $TAG"
+
+      - name: Smoke снаружи
+        run: |
+          set -e
+          curl -fsS --max-time 10 https://${{ vars.DOMAIN }}/ru > /dev/null
+          curl -fsS --max-time 10 https://${{ vars.DOMAIN }}/api/v1/projects > /dev/null
+          curl -fsSI https://${{ vars.DOMAIN }} | grep -qi strict-transport-security
+
+      - name: Итог в сводку
+        if: always()
+        run: |
+          {
+            echo "## Деплой ${{ job.status }}"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Версия | \`${{ github.ref_name }}\` |"
+            echo "| Сайт | https://${{ vars.DOMAIN }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Уведомление при падении
+        if: failure()
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TG_CHAT }}" \
+            -d text="deploy FAILED · ${{ github.ref_name }} · https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

@@ -15,7 +15,11 @@ FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 \
     NODE_OPTIONS=--max-old-space-size=384
-RUN addgroup -g 10001 nodejs && adduser -u 10001 -G nodejs -S nextjs
+# npm в рантайме не нужен: standalone-сборка запускается голым node.
+# Удаление убирает из образа целый пласт CVE в его собственных зависимостях
+# (tar, brace-expansion и прочие), которые мы иначе не контролируем.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
+ && addgroup -g 10001 nodejs && adduser -u 10001 -G nodejs -S nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public

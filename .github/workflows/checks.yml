@@ -1,0 +1,62 @@
+# Быстрые проверки на каждый push. Ничего тяжёлого: ни сборки образов,
+# ни сканов, ни деплоя. Цель — уложиться в 2-3 минуты, чтобы на пайплайн
+# не приходилось смотреть.
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/api } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -e ".[dev]"
+      - run: ruff check . && ruff format --check .
+      - run: mypy app
+      - name: границы слоёв
+        run: lint-imports
+      - run: pytest
+      - name: покрытие в сводку
+        if: always()
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, pathlib
+          f = pathlib.Path("coverage.json")
+          if f.exists():
+              pct = json.loads(f.read_text())["totals"]["percent_covered"]
+              print(f"## Бэкенд\n\nПокрытие: **{pct:.1f}%** (порог 85%)")
+          PY
+
+  web:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "24.15.0", cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+      - name: бюджет бандла (ADR-0017)
+        run: npx size-limit
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }

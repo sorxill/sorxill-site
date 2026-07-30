@@ -5,7 +5,8 @@
 **Персональный сайт-визитка Python backend инженера.**
 Next.js 16 · FastAPI · Docker · выделенный VPS в Нидерландах
 
-[![pipeline](https://github.com/sorxill/sorxill.ru/actions/workflows/pipeline.yml/badge.svg)](https://github.com/sorxill/sorxill.ru/actions/workflows/pipeline.yml)
+[![checks](https://github.com/sorxill/sorxill.ru/actions/workflows/checks.yml/badge.svg)](https://github.com/sorxill/sorxill.ru/actions/workflows/checks.yml)
+[![release](https://github.com/sorxill/sorxill.ru/actions/workflows/release.yml/badge.svg)](https://github.com/sorxill/sorxill.ru/actions/workflows/release.yml)
 [![coverage](https://img.shields.io/badge/coverage-94%25-14507E)](#тесты)
 [![python](https://img.shields.io/badge/python-3.12-14507E)](apps/api/pyproject.toml)
 [![typescript](https://img.shields.io/badge/typescript-strict-14507E)](apps/web/tsconfig.json)
@@ -134,6 +135,7 @@ make lint                 # ровно то, что проверит CI
 | GHCR | Реестр образов рядом с кодом, без внешнего сервиса |
 | release-please | CHANGELOG и релизы собираются из conventional commits |
 | Job summary | Покрытие и результат деплоя видны в сводке запуска, без чтения логов |
+| Разделение пайплайнов | Проверки 2-3 мин на каждый коммит, сборка и деплой только по тегу ([ADR-0018](docs/adr/0018-razdelenie-payplaynov.md)) |
 
 ## План
 
