@@ -65,7 +65,7 @@
 | RPO | ≤ 24 ч (ночной дамп) | Проверка восстановления раз в месяц |
 | RTO | ≤ 30 мин | Прогон runbook на чистой машине |
 | Ошибки | 5xx < 0.5% запросов | Sentry + Prometheus alert |
-| Bundle | JS на главной ≤ 120 KB gzip | `size-limit` в CI, блокирует merge |
+| Bundle | все клиентские чанки ≤ 260 KB brotli | `size-limit` в CI; per-route бюджет — Lighthouse CI в M2 ([ADR-0017](adr/0017-byudzhet-bandla.md)) |
 
 ---
 

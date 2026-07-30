@@ -1,22 +1,40 @@
-# Раз в месяц, одним PR на экосистему. Пять PR в неделю одиночка просто закроет не читая,
-# а это хуже, чем их отсутствие: привыкаешь игнорировать обновления безопасности.
+# Патчи и минорные — одним PR, их можно мерджить по зелёному CI не глядя.
+# Мажорные — каждый своим PR: у них ломающие изменения, и они не должны
+# ехать в одном PR вместе с безобидными обновлениями по принципу «всё или ничего».
 version: 2
 updates:
   - package-ecosystem: pip
     directory: /apps/api
     schedule: { interval: monthly }
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 5
     groups:
-      all: { patterns: ["*"] }
+      safe:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message: { prefix: "build(deps)" }
+
   - package-ecosystem: npm
     directory: /apps/web
     schedule: { interval: monthly }
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 5
     groups:
-      all: { patterns: ["*"] }
+      safe:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    commit-message: { prefix: "build(deps)" }
+
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
-    open-pull-requests-limit: 1
+    open-pull-requests-limit: 2
     groups:
-      all: { patterns: ["*"] }
+      actions:
+        patterns: ["*"]
+    commit-message: { prefix: "ci(deps)" }
+
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule: { interval: monthly }
+  - package-ecosystem: docker
+    directory: /apps/web
+    schedule: { interval: monthly }
