@@ -27,7 +27,5 @@ class PublishProject:
             raise NotFoundError(f"Проект {cmd.slug!r} не найден")
         project.publish(at=self._clock.now())
         await self._repo.save(project)
-        await self._tasks.enqueue(
-            "revalidate", tags=["projects", f"project:{slug}"]
-        )
+        await self._tasks.enqueue("revalidate", tags=["projects", f"project:{slug}"])
         return ProjectDTO.from_entity(project, cmd.locale)
