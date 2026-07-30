@@ -5,8 +5,8 @@
 **Персональный сайт-визитка Python backend инженера.**
 Next.js 16 · FastAPI · Docker · выделенный VPS в Нидерландах
 
-[![checks](https://github.com/sorxill/sorxill.ru/actions/workflows/checks.yml/badge.svg)](https://github.com/sorxill/sorxill.ru/actions/workflows/checks.yml)
-[![release](https://github.com/sorxill/sorxill.ru/actions/workflows/release.yml/badge.svg)](https://github.com/sorxill/sorxill.ru/actions/workflows/release.yml)
+[![checks](https://github.com/sorxill/sorxill-site/actions/workflows/checks.yml/badge.svg)](https://github.com/sorxill/sorxill-site/actions/workflows/checks.yml)
+[![release](https://github.com/sorxill/sorxill-site/actions/workflows/release.yml/badge.svg)](https://github.com/sorxill/sorxill-site/actions/workflows/release.yml)
 [![coverage](https://img.shields.io/badge/coverage-94%25-14507E)](#тесты)
 [![python](https://img.shields.io/badge/python-3.12-14507E)](apps/api/pyproject.toml)
 [![typescript](https://img.shields.io/badge/typescript-strict-14507E)](apps/web/tsconfig.json)

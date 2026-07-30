@@ -22,6 +22,18 @@ updates:
         patterns: ["*"]
         update-types: ["minor", "patch"]
     commit-message: { prefix: "build(deps)" }
+    ignore:
+      # Проверено 30.07.2026 на реальной сборке — оба мажора ломают линт:
+      #   eslint 10     → scopeManager.addGlobals is not a function
+      #   typescript 7  → typescript-eslint does not support TS 7.0
+      # Снять запрет, когда eslint-config-next объявит поддержку.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Типы Node должны совпадать с рантаймом (24.x), а не опережать его.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -35,6 +47,11 @@ updates:
   - package-ecosystem: docker
     directory: /apps/api
     schedule: { interval: monthly }
+    ignore:
+      # Мажор Python меняет рантайм образа, а CI продолжает тестировать на 3.12.
+      # Обновляется осознанно и вместе: Dockerfile + CI + requires-python.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /apps/web
     schedule: { interval: monthly }
