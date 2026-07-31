@@ -114,7 +114,7 @@ class PublishProject:
     async def execute(self, cmd: PublishProjectCommand) -> ProjectDTO:
         project = await self._repo.get_by_slug(cmd.slug)
         if project is None:
-            raise ProjectNotFound(cmd.slug)
+            raise NotFoundError(f"Проект {cmd.slug!r} не найден")
         project.publish(at=self._clock.now())          # инвариант — внутри сущности
         await self._repo.save(project)
         await self._tasks.enqueue("revalidate", tags=["projects", f"project:{project.slug}"])

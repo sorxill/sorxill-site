@@ -12,7 +12,7 @@ Next.js 16 · FastAPI · Docker · выделенный VPS в Нидерлан�
 [![typescript](https://img.shields.io/badge/typescript-strict-14507E)](apps/web/tsconfig.json)
 [![license](https://img.shields.io/badge/license-MIT-9BAAA2)](LICENSE)
 
-[Сайт](https://sorxill.ru) · [HLD](docs/01-HLD.md) · [LLD](docs/02-LLD.md) · [Макет](docs/03-homepage-mockup.html) · [ADR](docs/adr/)
+[Сайт](https://sorxill.ru) · [Что готово](docs/STATUS.md) · [HLD](docs/01-HLD.md) · [LLD](docs/02-LLD.md) · [Макет](docs/03-homepage-mockup.html) · [ADR](docs/adr/)
 
 </div>
 
@@ -97,7 +97,7 @@ make lint                 # ровно то, что проверит CI
 ## Тесты
 
 ```
-33 passed · coverage 92% · порог 85%, понижать нельзя
+40 passed · coverage 92% · порог 85%, понижать нельзя
 ```
 
 | Уровень | Что проверяет |
