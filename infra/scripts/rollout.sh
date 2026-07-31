@@ -11,7 +11,13 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/../.."
-COMPOSE="docker compose -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.prod.yml"
+# --env-file обязателен: compose ищет .env в каталоге первого -f файла
+# (infra/compose/), а не в текущем. Без него все переменные пустые
+# и образ превращается в "ghcr.io//sorxill-api".
+# --project-directory не трогаем: относительные пути томов в compose-файлах
+# считаются от него, и их сдвиг сломает монтирование конфигов.
+COMPOSE="docker compose --env-file /opt/sorxill/.env \
+  -f infra/compose/docker-compose.yml -f infra/compose/docker-compose.prod.yml"
 
 [[ -f .env.secrets ]] || { echo "Нет .env.secrets — пайплайн ещё не приносил секреты"; exit 1; }
 
@@ -29,6 +35,12 @@ render_env() {
   { cat .env.secrets; printf 'API_TAG=%s\nWEB_TAG=%s\n' "$1" "$1"; } > .env
 }
 render_env "$TAG"
+
+# Ранняя внятная ошибка вместо "invalid reference format" на середине деплоя.
+for var in DOMAIN GH_OWNER POSTGRES_PASSWORD API_TAG WEB_TAG; do
+  value="$(grep -m1 "^${var}=" .env | cut -d= -f2-)"
+  [[ -n "$value" ]] || { echo "В .env пусто: $var — проверьте секреты окружения production"; exit 1; }
+done
 
 $COMPOSE pull api web
 
