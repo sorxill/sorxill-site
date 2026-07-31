@@ -26,10 +26,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 USER nextjs
 EXPOSE 3000
-# Проверяем корень, а не /ru: локаль добавляет редирект через proxy.ts,
-# и wget без --max-redirect считает 307 неудачей.
-# start-period 40s: первый рендер страницы тянет данные из API,
-# и на двух ядрах холодный старт заметно дольше пустого ответа.
-HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
-  CMD wget -q --spider --max-redirect=3 http://127.0.0.1:3000/ || exit 1
+# В Alpine стоит busybox wget: он НЕ понимает --max-redirect и --spider
+# из GNU wget и падает на разборе аргументов, а не на запросе.
+# Поэтому проверяем /ru напрямую, без редиректов, самой простой формой.
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -q -O /dev/null http://127.0.0.1:3000/ru || exit 1
 CMD ["node", "server.js"]
