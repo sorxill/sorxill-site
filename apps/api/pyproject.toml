@@ -18,10 +18,11 @@ dependencies = [
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-# Явно указываем пакет: рядом лежит каталог alembic, и без этого
-# setuptools видит два top-level пакета и отказывается собирать.
-packages = ["app"]
+[tool.setuptools.packages.find]
+# find, а не packages = ["app"]: явный список НЕ включает вложенные пакеты,
+# и в колесо попадал один app/__init__.py без app.core, app.domain и прочих.
+# include ограничивает поиск, чтобы соседний каталог alembic не считался пакетом.
+include = ["app*"]
 
 [project.optional-dependencies]
 dev = [
