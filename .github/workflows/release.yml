@@ -5,7 +5,9 @@ name: release
 
 on:
   push:
-    tags: ["v*"]
+    # Оба вида: "v0.2.0" и "sorxill.ru-v0.2.0" — release-please
+    # исторически создавал теги с компонентом в имени.
+    tags: ["v*", "*-v*"]
   workflow_dispatch:
     inputs:
       rollback_sha:

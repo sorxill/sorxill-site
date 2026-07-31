@@ -1,13 +1,42 @@
 {
   "release-type": "simple",
-  "packages": { ".": { "package-name": "sorxill.ru" } },
+  "packages": {
+    ".": {
+      "package-name": "sorxill.ru"
+    }
+  },
   "changelog-sections": [
-    { "type": "feat", "section": "Новое" },
-    { "type": "fix", "section": "Исправления" },
-    { "type": "perf", "section": "Производительность" },
-    { "type": "refactor", "section": "Рефакторинг" },
-    { "type": "docs", "section": "Документация" },
-    { "type": "ci", "section": "CI/CD", "hidden": true },
-    { "type": "chore", "section": "Прочее", "hidden": true }
-  ]
+    {
+      "type": "feat",
+      "section": "Новое"
+    },
+    {
+      "type": "fix",
+      "section": "Исправления"
+    },
+    {
+      "type": "perf",
+      "section": "Производительность"
+    },
+    {
+      "type": "refactor",
+      "section": "Рефакторинг"
+    },
+    {
+      "type": "docs",
+      "section": "Документация"
+    },
+    {
+      "type": "ci",
+      "section": "CI/CD",
+      "hidden": true
+    },
+    {
+      "type": "chore",
+      "section": "Прочее",
+      "hidden": true
+    }
+  ],
+  "include-component-in-tag": false,
+  "tag-separator": "-"
 }
