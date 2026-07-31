@@ -14,7 +14,8 @@ RUN npm run build
 FROM node:24-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 \
-    NODE_OPTIONS=--max-old-space-size=384
+    NODE_OPTIONS=--max-old-space-size=384 \
+    HOSTNAME=0.0.0.0
 # npm в рантайме не нужен: standalone-сборка запускается голым node.
 # Удаление убирает из образа целый пласт CVE в его собственных зависимостях
 # (tar, brace-expansion и прочие), которые мы иначе не контролируем.
@@ -25,6 +26,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 USER nextjs
 EXPOSE 3000
-HEALTHCHECK --interval=15s --timeout=3s --start-period=15s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:3000/ru >/dev/null || exit 1
+# Проверяем корень, а не /ru: локаль добавляет редирект через proxy.ts,
+# и wget без --max-redirect считает 307 неудачей.
+# start-period 40s: первый рендер страницы тянет данные из API,
+# и на двух ядрах холодный старт заметно дольше пустого ответа.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+  CMD wget -q --spider --max-redirect=3 http://127.0.0.1:3000/ || exit 1
 CMD ["node", "server.js"]
