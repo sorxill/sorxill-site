@@ -41,7 +41,7 @@ render_env() {
 render_env "$TAG"
 
 # Ранняя внятная ошибка вместо "invalid reference format" на середине деплоя.
-for var in DOMAIN GH_OWNER POSTGRES_PASSWORD API_TAG WEB_TAG; do
+for var in DOMAIN GH_OWNER ACME_EMAIL POSTGRES_PASSWORD API_TAG WEB_TAG; do
   value="$(grep -m1 "^${var}=" .env | cut -d= -f2-)"
   [[ -n "$value" ]] || { echo "В .env пусто: $var — проверьте секреты окружения production"; exit 1; }
 done
@@ -77,6 +77,16 @@ if ! curl -fsS --max-time 5 http://127.0.0.1/api/v1/projects -H "Host: $DOMAIN_V
   echo "откатываюсь"
   [[ "${1:-}" != "--rollback" ]] && exec bash "$0" --rollback
   exit 1
+fi
+
+# Сертификат выдаётся асинхронно после первого обращения к домену.
+# Разогреваем и показываем результат, чтобы проблема ACME была видна
+# здесь, а не через шаг во внешнем smoke-тесте.
+curl -s --max-time 15 -o /dev/null "https://$DOMAIN_VALUE/" --insecure || true
+sleep 8
+if ! curl -fsS --max-time 10 -o /dev/null "https://$DOMAIN_VALUE/"; then
+  echo "⚠️  Сертификат ещё не выдан. Логи ACME:"
+  $COMPOSE logs --tail 30 traefik 2>&1 | grep -iE "acme|certificate|error" || true
 fi
 
 echo "$TAG" > .deploy-current
