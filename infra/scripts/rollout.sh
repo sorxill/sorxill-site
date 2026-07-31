@@ -40,7 +40,7 @@ for svc in api web; do
   echo "→ подменяю $svc"
   if ! $COMPOSE up -d --no-deps --wait --wait-timeout 90 "$svc"; then
     echo "$svc не стал healthy, откатываюсь"
-    [[ "${1:-}" != "--rollback" ]] && exec "$0" --rollback
+    [[ "${1:-}" != "--rollback" ]] && exec bash "$0" --rollback
     exit 1
   fi
 done
@@ -48,7 +48,7 @@ done
 DOMAIN_VALUE="$(grep -m1 '^DOMAIN=' .env.secrets | cut -d= -f2)"
 if ! curl -fsS --max-time 5 http://127.0.0.1/api/v1/projects -H "Host: $DOMAIN_VALUE" >/dev/null; then
   echo "smoke провален, откатываюсь"
-  [[ "${1:-}" != "--rollback" ]] && exec "$0" --rollback
+  [[ "${1:-}" != "--rollback" ]] && exec bash "$0" --rollback
   exit 1
 fi
 

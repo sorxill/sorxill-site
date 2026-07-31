@@ -189,3 +189,32 @@ ssh deploy@<ip> "cd /opt/sorxill && ./infra/scripts/rollout.sh --rollback"
 M1: Postgres и Alembic вместо in-memory репозитория. Миграции применяются
 в `rollout.sh` до старта нового кода, поэтому схема обязана быть обратно
 совместимой: expand → migrate → contract.
+
+---
+
+## Уведомления в Telegram
+
+Не обязательны, но полезны: приходят только при падении деплоя.
+
+1. Написать [@BotFather](https://t.me/BotFather) → `/newbot` → задать имя и username.
+   В ответ придёт токен вида `8123456789:AAH...`.
+2. Написать **своему боту** любое сообщение — без этого он не имеет права вам писать.
+3. Узнать свой chat id:
+   ```bash
+   curl -s "https://api.telegram.org/bot<ТОКЕН>/getUpdates" | grep -o '"id":[0-9-]*' | head -1
+   ```
+4. Залить в секреты:
+   ```bash
+   gh secret set TG_TOKEN --body "8123456789:AAH..."
+   gh secret set TG_CHAT  --body "123456789"
+   ```
+
+Проверка:
+```bash
+curl -s -X POST "https://api.telegram.org/bot<ТОКЕН>/sendMessage" \
+  -d chat_id="<CHAT_ID>" -d text="проверка"
+```
+
+Ошибка `404 Not Found` означает неверный или пустой токен — именно так выглядит
+незаполненный секрет. `403 Forbidden` — вы не написали боту первым (пункт 2).
+Если оставить секреты пустыми, шаг уведомления просто пропускается.
