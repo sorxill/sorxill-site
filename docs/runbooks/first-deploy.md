@@ -50,30 +50,53 @@ git push
 
 **Ожидаемо:** пайплайн зелёный, в Packages появились два образа.
 
-## Шаг 5. Сделать образы доступными серверу
+## Шаг 5. Пакеты GHCR — ничего делать не нужно
 
-Packages → `sorxill-api` → Package settings → Change visibility → Public.
-То же для `sorxill-web`. Иначе серверу понадобится токен на каждый pull.
+Образы остаются приватными. Пайплайн логинится в GHCR прямо на сервере
+токеном текущего запуска, поэтому публиковать пакеты не требуется.
 
 ## Шаг 6. Подготовить сервер A
 
+**Порядок важен.** Сначала генерируем ключ, потом запускаем bootstrap —
+он ставит ключ и только после этого закрывает парольный вход. Если запустить
+наоборот, сервер закроется раньше, чем в него удастся положить ключ.
+
 ```bash
-scp infra/scripts/bootstrap-vps.sh root@<ip-сервера-A>:/tmp/
-ssh root@<ip-сервера-A> bash /tmp/bootstrap-vps.sh
+# 1. Ключ деплоя, отдельный от вашего личного
+ssh-keygen -t ed25519 -f ~/.ssh/sorxill_deploy -C "github-actions" -N ""
+
+# 2. Скрипт с публичным ключом аргументом
+scp infra/scripts/bootstrap-vps.sh root@<ip>:/tmp/
+ssh root@<ip> "bash /tmp/bootstrap-vps.sh \"$(cat ~/.ssh/sorxill_deploy.pub)\""
 ```
 
 Скрипт делает: swap 2 ГБ, Docker с ротацией логов, пользователь `deploy`,
-UFW на 22/80/443, fail2ban, запрет root-логина и парольной аутентификации.
+**ключ деплоя**, UFW на 22/80/443, fail2ban, запрет парольного входа.
 
-Ключ для деплоя — отдельный от вашего личного:
+**Проверка, обязательно до перезапуска терминала:**
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/sorxill_deploy -C "github-actions" -N ""
-ssh-copy-id -i ~/.ssh/sorxill_deploy.pub deploy@<ip-сервера-A>
+ssh -i ~/.ssh/sorxill_deploy deploy@<ip> docker ps
 ```
 
-**Проверка:** `ssh -i ~/.ssh/sorxill_deploy deploy@<ip> docker ps` работает,
-`ssh root@<ip>` больше нет.
+Работает — идём дальше. Не работает — **не закрывайте текущую сессию root**,
+пока не разберётесь, иначе останется только консоль провайдера.
+
+### Если вход уже потерян
+
+Симптом: `ssh-copy-id` отвечает `Permission denied (publickey)`, зайти
+ни под `root`, ни под `deploy` нельзя. Так бывает, если bootstrap отработал
+без ключа. Лечится через **VNC-консоль в панели провайдера**:
+
+```bash
+mkdir -p /home/deploy/.ssh
+echo "ssh-ed25519 AAAA... github-actions" > /home/deploy/.ssh/authorized_keys
+chown -R deploy:deploy /home/deploy/.ssh
+chmod 700 /home/deploy/.ssh
+chmod 600 /home/deploy/.ssh/authorized_keys
+```
+
+Строку с ключом возьмите из `cat ~/.ssh/sorxill_deploy.pub` на своей машине.
 
 ## Шаг 7. DNS
 

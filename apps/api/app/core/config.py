@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_env: Literal["local", "ci", "production"] = "local"
+    database_url: str = "postgresql+asyncpg://sorxill:local@localhost:5432/sorxill"
     app_version: str = "dev"
     log_level: str = "INFO"
     cors_origins: list[str] = Field(default_factory=list)

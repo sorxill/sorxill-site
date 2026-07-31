@@ -12,6 +12,10 @@ RUN useradd --create-home --uid 10001 app
 COPY --from=builder /install /install
 WORKDIR /app
 COPY --chown=app:app app ./app
+# Миграции запускаются на сервере отдельным one-shot контейнером
+# (rollout.sh), поэтому alembic обязан быть внутри образа.
+COPY --chown=app:app alembic ./alembic
+COPY --chown=app:app alembic.ini ./alembic.ini
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 \

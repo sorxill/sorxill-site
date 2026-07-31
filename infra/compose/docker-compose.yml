@@ -49,9 +49,14 @@ services:
   api:
     image: ghcr.io/${GH_OWNER}/sorxill-api:${API_TAG:-latest}
     restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_VERSION: ${API_TAG:-dev}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-sorxill}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sorxill}
+      REDIS_URL: redis://redis:6379/0
       CORS_ORIGINS: https://${DOMAIN},https://www.${DOMAIN}
       CONTACT_PERSIST: ${CONTACT_PERSIST:-false}
     labels:

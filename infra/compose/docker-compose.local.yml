@@ -21,12 +21,15 @@ services:
       APP_ENV: local
       LOG_LEVEL: DEBUG
       CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: postgresql+asyncpg://sorxill:local@postgres:5432/sorxill
     volumes: ["../../apps/api/app:/app/app:ro"]
     ports: ["8000:8000"]
 
   postgres:
     ports: ["5432:5432"]
     environment:
+      POSTGRES_USER: sorxill
+      POSTGRES_DB: sorxill
       POSTGRES_PASSWORD: local
 
   redis:

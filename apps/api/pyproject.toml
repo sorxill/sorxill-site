@@ -19,6 +19,7 @@ dev = [
     "mypy>=1.13",
     "ruff>=0.16.0",
     "import-linter>=2.13",
+    "pytest-postgresql>=6.1",
 ]
 
 [tool.ruff]

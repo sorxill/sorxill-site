@@ -1,14 +1,24 @@
-"""Сборка зависимостей. Единственное место, где слои склеиваются."""
+"""Сборка зависимостей — единственное место, где склеиваются слои.
+
+Выбор реализации репозитория живёт здесь и только здесь: use cases
+о нём не знают, поэтому переход с in-memory на Postgres не потребовал
+ни одной правки в application-слое.
+"""
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from collections.abc import AsyncIterator
 from functools import lru_cache
+from typing import Annotated
+
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.use_cases.list_published_projects import ListPublishedProjects
 from app.application.use_cases.publish_project import PublishProject
-from app.domain.entities import Project
-from app.domain.value_objects import Locale, Slug
+from app.core.config import get_settings
+from app.domain.ports import ProjectRepository
+from app.infrastructure.db.engine import make_engine, make_session_factory
 from app.infrastructure.memory import (
     InMemoryProjectRepository,
     RecordingTaskQueue,
@@ -16,26 +26,25 @@ from app.infrastructure.memory import (
 )
 
 
-def _seed() -> list[Project]:
-    """Временные данные M0. В M1 их заменит Postgres."""
-    gateway = Project(
-        slug=Slug("fastapi-gateway"),
-        title={Locale.RU: "Шлюз на FastAPI", Locale.EN: "FastAPI gateway"},
-        summary={
-            Locale.RU: "Rate limiting, кэш ответов и circuit breaker. 500+ RPS в проде.",
-            Locale.EN: "Rate limiting, response cache and circuit breaker. 500+ RPS.",
-        },
-        cover_url="/covers/gateway.avif",
-        stack=["FastAPI", "Redis", "asyncio"],
-        sort_order=10,
-    )
-    gateway.publish(at=datetime(2026, 5, 1, tzinfo=UTC))
-    return [gateway]
+@lru_cache
+def _engine():  # type: ignore[no-untyped-def]
+    settings = get_settings()
+    return make_engine(settings.database_url, echo=settings.app_env == "local")
 
 
 @lru_cache
-def _repo() -> InMemoryProjectRepository:
-    return InMemoryProjectRepository(_seed())
+def _session_factory():  # type: ignore[no-untyped-def]
+    return make_session_factory(_engine())
+
+
+async def get_session() -> AsyncIterator[AsyncSession]:
+    async with _session_factory()() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 @lru_cache
@@ -43,9 +52,28 @@ def _queue() -> RecordingTaskQueue:
     return RecordingTaskQueue()
 
 
-def list_projects_uc() -> ListPublishedProjects:
-    return ListPublishedProjects(_repo())
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-def publish_project_uc() -> PublishProject:
-    return PublishProject(_repo(), SystemClock(), _queue())
+def get_project_repo(session: SessionDep) -> ProjectRepository:
+    # Импорт внутри функции: без базы приложение всё равно должно стартовать,
+    # чтобы отдавать /health и статику (деградация из HLD §3).
+    from app.infrastructure.db.repositories import SqlAlchemyProjectRepository
+
+    return SqlAlchemyProjectRepository(session)
+
+
+RepoDep = Annotated[ProjectRepository, Depends(get_project_repo)]
+
+
+def list_projects_uc(repo: RepoDep) -> ListPublishedProjects:
+    return ListPublishedProjects(repo)
+
+
+def publish_project_uc(repo: RepoDep) -> PublishProject:
+    return PublishProject(repo, SystemClock(), _queue())
+
+
+def in_memory_repo_override() -> ProjectRepository:
+    """Для тестов API: подменяет базу без поднятия Postgres."""
+    return InMemoryProjectRepository([])
