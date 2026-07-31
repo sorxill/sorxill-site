@@ -2,7 +2,12 @@
 FROM python:3.12-slim AS builder
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PYTHONDONTWRITEBYTECODE=1
 WORKDIR /build
+# Пакет объявлен явно (packages = ["app"]), поэтому каталог обязан
+# существовать на момент сборки — одного pyproject.toml мало.
+# Платим тем, что слой с зависимостями инвалидируется при правке кода;
+# для релизных сборок раз в несколько дней это приемлемо.
 COPY pyproject.toml ./
+COPY app ./app
 RUN pip install --no-cache-dir --prefix=/install .
 
 FROM python:3.12-slim AS runtime
@@ -11,7 +16,9 @@ ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PATH="/install/bin:$PATH" \
 RUN useradd --create-home --uid 10001 app
 COPY --from=builder /install /install
 WORKDIR /app
-COPY --chown=app:app app ./app
+# Сам пакет app уже установлен в /install из builder-стадии,
+# копировать исходники повторно не нужно — иначе получим два
+# экземпляра пакета и неочевидные ошибки импорта.
 # Миграции запускаются на сервере отдельным one-shot контейнером
 # (rollout.sh), поэтому alembic обязан быть внутри образа.
 COPY --chown=app:app alembic ./alembic
