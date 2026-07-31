@@ -49,6 +49,8 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.web.rule=Host(`${DOMAIN}`) || Host(`www.${DOMAIN}`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.priority=10
       - traefik.http.routers.web.middlewares=sec-headers@file,ratelimit@file
       - traefik.http.services.web.loadbalancer.server.port=3000
     deploy:
@@ -71,9 +73,15 @@ services:
       CONTACT_PERSIST: ${CONTACT_PERSIST:-false}
     labels:
       - traefik.enable=true
-      - traefik.http.routers.api.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
-      - traefik.http.routers.api.middlewares=sec-headers@file,ratelimit@file
-      - traefik.http.services.api.loadbalancer.server.port=8000
+      # Имя "api" зарезервировано под встроенный роутер Traefik (api@internal),
+      # свой роутер с таким именем не регистрируется. Отсюда "backend".
+      - traefik.http.routers.backend.rule=Host(`${DOMAIN}`) && PathPrefix(`/api`)
+      - traefik.http.routers.backend.entrypoints=websecure
+      # Приоритет выше, чем у web: иначе более общее правило Host() может
+      # перехватить /api. Не полагаемся на подсчёт длины правила.
+      - traefik.http.routers.backend.priority=100
+      - traefik.http.routers.backend.middlewares=sec-headers@file,ratelimit@file
+      - traefik.http.services.backend.loadbalancer.server.port=8000
     deploy:
       resources:
         limits: { memory: 384M, cpus: "0.4" }

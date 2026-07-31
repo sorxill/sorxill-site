@@ -61,7 +61,10 @@ $COMPOSE run --rm api alembic upgrade head || { echo "Миграции упал�
 
 for svc in api web; do
   echo "→ подменяю $svc"
-  if ! $COMPOSE up -d --no-deps --wait --wait-timeout 150 "$svc"; then
+  # --force-recreate: при изменении только меток Traefik (labels) образ и
+  # config-hash могут совпасть, compose ничего не пересоздаст, и роутер
+  # так и не появится. Контейнеры без состояния, пересоздание безопасно.
+  if ! $COMPOSE up -d --no-deps --force-recreate --wait --wait-timeout 150 "$svc"; then
     echo "$svc не стал healthy, откатываюсь"
     [[ "${1:-}" != "--rollback" ]] && exec bash "$0" --rollback
     exit 1
