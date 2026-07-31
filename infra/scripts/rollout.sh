@@ -22,7 +22,11 @@ COMPOSE="docker compose --env-file /opt/sorxill/.env \
 [[ -f .env.secrets ]] || { echo "Нет .env.secrets — пайплайн ещё не приносил секреты"; exit 1; }
 
 if [[ "${1:-}" == "--rollback" ]]; then
-  [[ -f .deploy-previous ]] || { echo "Нет сохранённого предыдущего тега"; exit 1; }
+  [[ -f .deploy-previous ]] || {
+    echo "Откатываться некуда: это первый деплой, предыдущей версии не существует."
+    echo "Смотрите логи: docker logs --tail 50 sorxill-web-1"
+    exit 1
+  }
   TAG="$(cat .deploy-previous)"
   echo "Откат на $TAG"
 else
@@ -44,13 +48,20 @@ done
 
 $COMPOSE pull api web
 
+# Инфраструктурные сервисы поднимаем явно: подмена приложения идёт
+# с --no-deps, поэтому Traefik, Postgres и Redis сами по себе не стартуют.
+# Без Traefik порт 80 никто не слушает и smoke-тест падает при живых
+# и здоровых контейнерах приложения.
+$COMPOSE up -d --wait --wait-timeout 90 postgres redis
+$COMPOSE up -d traefik
+
 # Миграции one-shot до старта нового кода. Схема обратно совместима
 # (expand → migrate → contract), поэтому старая версия продолжает работать.
 $COMPOSE run --rm api alembic upgrade head || { echo "Миграции упали, деплой отменён"; exit 1; }
 
 for svc in api web; do
   echo "→ подменяю $svc"
-  if ! $COMPOSE up -d --no-deps --wait --wait-timeout 90 "$svc"; then
+  if ! $COMPOSE up -d --no-deps --wait --wait-timeout 150 "$svc"; then
     echo "$svc не стал healthy, откатываюсь"
     [[ "${1:-}" != "--rollback" ]] && exec bash "$0" --rollback
     exit 1
@@ -59,7 +70,11 @@ done
 
 DOMAIN_VALUE="$(grep -m1 '^DOMAIN=' .env.secrets | cut -d= -f2)"
 if ! curl -fsS --max-time 5 http://127.0.0.1/api/v1/projects -H "Host: $DOMAIN_VALUE" >/dev/null; then
-  echo "smoke провален, откатываюсь"
+  echo "smoke провален. Состояние контейнеров:"
+  $COMPOSE ps
+  echo "Последние строки Traefik:"
+  $COMPOSE logs --tail 20 traefik || true
+  echo "откатываюсь"
   [[ "${1:-}" != "--rollback" ]] && exec bash "$0" --rollback
   exit 1
 fi

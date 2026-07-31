@@ -8,6 +8,9 @@ services:
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
+      # Без файлового провайдера middlewares sec-headers@file и ratelimit@file
+      # не существуют, и Traefik отбрасывает роутеры, которые на них ссылаются.
+      - --providers.file.filename=/etc/traefik/dynamic.yml
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.websecure.address=:443
@@ -21,6 +24,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-acme:/letsencrypt
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
     deploy:
       resources:
         limits: { memory: 96M, cpus: "0.2" }
